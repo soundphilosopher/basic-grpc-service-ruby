@@ -1,8 +1,8 @@
-require 'google/protobuf/timestamp_pb'
+require "google/protobuf/timestamp_pb"
 
-require 'basic/v1/basic_services_pb'
-require 'basic/service/v1/service_pb'
-require 'io/cloudevents/v1/cloudevents_pb'
+require "basic/v1/basic_services_pb"
+require "basic/service/v1/service_pb"
+require "io/cloudevents/v1/cloudevents_pb"
 
 class Utils
   class Utils
@@ -22,11 +22,11 @@ class Utils
 
       ce = Io::CloudEvents::V1::Proto::CloudEvent.new(
         id: SecureRandom.uuid,
-        source: 'urn:service:basic',
-        spec_version: '1.0',
+        source: "urn:service:basic",
+        spec_version: "1.0",
         type: payload.class.descriptor.name,
         attributes: {
-          'time' => Io::CloudEvents::V1::Proto::CloudEvent::CloudEventAttributeValue.new(ce_timestamp: to_ts(Time.now))
+          "time" => Io::CloudEvents::V1::Proto::CloudEvent::CloudEventAttributeValue.new(ce_timestamp: to_ts(Time.now))
         },
         proto_data: any
       )
@@ -44,7 +44,7 @@ class Utils
         name: name,
         version: "v1",
         data: Basic::Service::V1::SomeServiceData.new(
-          value: "#{protocol}",
+          value: protocol.to_s,
           type: "protocol"
         )
       )
@@ -53,7 +53,7 @@ class Utils
     def to_ts(time)
       Google::Protobuf::Timestamp.new(
         seconds: time.to_i,
-        nanos:   time.nsec
+        nanos: time.nsec
       )
     end
   end
@@ -88,8 +88,7 @@ class Utils
     def preprocess(input)
       s = input.to_s.strip.downcase
       # strip leading/trailing punctuation .,!?'"
-      s = s.gsub(/\A[\.!?'"]+|[\.!?'"]+\z/, '')
-      s
+      s.gsub(/\A[\.!?'"]+|[\.!?'"]+\z/, "")
     end
 
     def sample(list)
@@ -97,7 +96,7 @@ class Utils
     end
 
     def reflect(fragment)
-      fragment.split(/\s+/).map { |w| REFLECTED_WORDS[w] || w }.join(' ')
+      fragment.split(/\s+/).map { |w| REFLECTED_WORDS[w] || w }.join(" ")
     end
 
     def lookup_response(input)
@@ -105,10 +104,10 @@ class Utils
         m = input.match(re)
         next unless m
         response = sample(responses)
-        return response unless response.include?('%s')
+        return response unless response.include?("%s")
         if m[1]
           frag = reflect(m[1])
-          return response.sub('%s', frag)
+          return response.sub("%s", frag)
         end
       end
       sample(DEFAULT_RESPONSES)

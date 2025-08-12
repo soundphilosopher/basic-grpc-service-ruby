@@ -1,19 +1,19 @@
-require 'bundler/setup'
+require "bundler/setup"
 
-require 'grpc_reflection'
+require "grpc_reflection"
 
-require 'grpc'
-require 'securerandom'
+require "grpc"
+require "securerandom"
 
-require 'google/protobuf/any_pb'
-require 'basic/v1/basic_services_pb'
-require 'basic/service/v1/service_pb'
-require 'io/cloudevents/v1/cloudevents_pb'
+require "google/protobuf/any_pb"
+require "basic/v1/basic_services_pb"
+require "basic/service/v1/service_pb"
+require "io/cloudevents/v1/cloudevents_pb"
+require "grpc/health/checker"
 
-require_relative 'utils'
+require_relative "utils"
 
 class BasicServiceV1 < Basic::V1::BasicService::Service
-
   def hello(req, _call)
     payload = Basic::Service::V1::HelloResponseEvent.new(
           greeting: "Hello, #{req.message}!"
@@ -27,13 +27,13 @@ class BasicServiceV1 < Basic::V1::BasicService::Service
     resp = Basic::Service::V1::HelloResponse.new(cloud_event: nil)
 
     resp.cloud_event = Io::CloudEvents::V1::Proto::CloudEvent.new(
-          id: SecureRandom.uuid,
-          source: 'urn:basic:v1:BasicService',
-          spec_version: '1.0',
-          type: resp.class.descriptor.name,
-          attributes: {},
-          proto_data: any
-        )
+      id: SecureRandom.uuid,
+      source: "urn:basic:v1:BasicService",
+      spec_version: "1.0",
+      type: resp.class.descriptor.name,
+      attributes: {},
+      proto_data: any
+    )
 
     resp
   end
@@ -111,7 +111,11 @@ class BasicServiceV1 < Basic::V1::BasicService::Service
       end
 
       # all done → final COMPLETE with full set
-      threads.each(&:join) rescue nil
+      begin
+        threads.each(&:join)
+      rescue
+        nil
+      end
       y << utils.build_background_response(
         state: Basic::Service::V1::State::STATE_COMPLETE,
         started_at: started_at,
@@ -120,30 +124,44 @@ class BasicServiceV1 < Basic::V1::BasicService::Service
       )
     rescue GRPC::BadStatus => e
       # client cancelled or stream error → stop workers
-      threads.each { |t| t.kill rescue nil }
+      threads.each { |t|
+        begin
+          t.kill
+        rescue
+          nil
+        end
+      }
       warn "Background stream aborted: #{e.code} (#{e.message})"
     rescue => e
-      threads.each { |t| t.kill rescue nil }
+      threads.each { |t|
+        begin
+          t.kill
+        rescue
+          nil
+        end
+      }
       warn "Background stream error: #{e.class}: #{e.message}"
     end
   end
 end
 
 if $0 == __FILE__
-  cert_dir = File.expand_path('certs', __dir__)
-  server_crt = File.read(File.join(cert_dir, 'local.crt'))
-  server_key = File.read(File.join(cert_dir, 'local.key'))
+  cert_dir = File.expand_path("certs", __dir__)
+  server_crt = File.read(File.join(cert_dir, "local.crt"))
+  server_key = File.read(File.join(cert_dir, "local.key"))
 
   creds = GRPC::Core::ServerCredentials.new(
     nil,
-    [{ private_key: server_key, cert_chain: server_crt }],
+    [{private_key: server_key, cert_chain: server_crt}],
     false
   )
 
-  addr = '127.0.0.1:50443'
+  addr = "127.0.0.1:50443"
   s = GRPC::RpcServer.new
   s.add_http2_port(addr, creds)
   s.handle(BasicServiceV1.new)
+
+  s.handle(Grpc::Health::Checker.new)
 
   s.handle(GrpcReflection::Server)
   s.handle(GrpcReflection::ServerAlpha)
@@ -153,8 +171,20 @@ if $0 == __FILE__
 
   # Self-pipe trick so traps stay trivial/safe
   r, w = IO.pipe
-  Signal.trap('INT')  { w.write('.') rescue nil }
-  Signal.trap('TERM') { w.write('.') rescue nil }
+  Signal.trap("INT") {
+    begin
+      w.write(".")
+    rescue
+      nil
+    end
+  }
+  Signal.trap("TERM") {
+    begin
+      w.write(".")
+    rescue
+      nil
+    end
+  }
 
   puts "BasicService (TLS) listening on #{addr} ..."
 
@@ -169,7 +199,15 @@ if $0 == __FILE__
   rescue => e
     warn "Shutdown error: #{e.class}: #{e.message}"
   ensure
-    r.close rescue nil
-    w.close rescue nil
+    begin
+      r.close
+    rescue
+      nil
+    end
+    begin
+      w.close
+    rescue
+      nil
+    end
   end
 end
