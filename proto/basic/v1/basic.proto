@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package basic.v1;
+
+option go_package = "github.com/soundphilosopher/basic-grpc-service-go/sdk/basic/v1;basicV1";
+
+import "basic/service/v1/service.proto";
+
+service BasicService {
+    rpc Hello(basic.service.v1.HelloRequest) returns (basic.service.v1.HelloResponse) {}
+    rpc Talk(stream basic.service.v1.TalkRequest) returns (stream basic.service.v1.TalkResponse) {}
+    rpc Background(basic.service.v1.BackgroundRequest) returns (stream basic.service.v1.BackgroundResponse) {}
+}

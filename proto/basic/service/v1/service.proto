@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package basic.service.v1;
+
+option go_package = "github.com/soundphilosopher/basic-grpc-service-go/sdk/basic/service/v1;basicServiceV1";
+
+import "io/cloudevents/v1/cloudevents.proto";
+import "google/protobuf/timestamp.proto";
+
+enum State {
+  STATE_UNSPECIFIED = 0;
+  STATE_PROCESS = 1;
+  STATE_COMPLETE = 2;
+  STATE_ERROR = 3;
+  STATE_COMPLETE_WITH_ERROR = 4;
+}
+
+message SomeServiceData {
+  string value = 1;
+  string type = 2;
+}
+
+message SomeServiceResponse {
+  string id = 1;
+  string name = 2;
+  string version = 3;
+  SomeServiceData data = 4;
+}
+
+message SomeServiceResponses {
+  repeated SomeServiceResponse responses = 1;
+}
+
+message HelloRequest {
+  string message = 1;
+}
+
+message HelloResponse {
+  io.cloudevents.v1.CloudEvent cloud_event = 1;
+}
+
+message HelloResponseEvent {
+  string greeting = 1;
+}
+
+message TalkRequest {
+  string message = 1;
+}
+
+message TalkResponse {
+  string answer = 1;
+}
+
+message BackgroundRequest {
+  int64 processes = 1;
+}
+
+message BackgroundResponse {
+  io.cloudevents.v1.CloudEvent cloud_event = 1;
+}
+
+message BackgroundResponseEvent {
+  State state = 1;
+  google.protobuf.Timestamp started_at = 2;
+  google.protobuf.Timestamp completed_at = 3;
+  repeated SomeServiceResponse responses = 4;
+}
