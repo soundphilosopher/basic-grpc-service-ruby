@@ -9,9 +9,9 @@ require "google/protobuf/any_pb"
 require "basic/v1/basic_services_pb"
 require "basic/service/v1/service_pb"
 require "io/cloudevents/v1/cloudevents_pb"
-require "grpc/health/checker"
 
 require_relative "utils"
+require_relative "health"
 
 class BasicServiceV1 < Basic::V1::BasicService::Service
   def hello(req, _call)
@@ -161,8 +161,10 @@ if $0 == __FILE__
   s.add_http2_port(addr, creds)
   s.handle(BasicServiceV1.new)
 
-  s.handle(Grpc::Health::Checker.new)
+  # add gRPC health
+  s.handle(Grpc::Health::Server.new)
 
+  # add reflection API
   s.handle(GrpcReflection::Server)
   s.handle(GrpcReflection::ServerAlpha)
 
