@@ -10,7 +10,7 @@ module Grpc
 
       def initialize(default_status: ServingStatus::SERVING)
         @statuses = {}
-        @ignore_services = []
+        @ignore_services = Set.new
         @status_mutex = Mutex.new
         @watch_mutex = Mutex.new
         @watch_cv = ConditionVariable.new
@@ -22,27 +22,46 @@ module Grpc
         Grpc::Health::V1::HealthCheckResponse.new(status: current_status(req.service.to_s))
       end
 
+      WATCH_WAKE_TIMEOUT = 30
+
       def watch(req, _call)
         svc = req.service.to_s
         last = nil
+
         loop do
           cur = current_status(svc)
           if cur != last
             yield Grpc::Health::V1::HealthCheckResponse.new(status: cur)
             last = cur
           end
-          @watch_mutex.synchronize { @watch_cv.wait(@watch_mutex, 30) }
+          @watch_mutex.synchronize { @watch_cv.wait(@watch_mutex, WATCH_WAKE_TIMEOUT) }
         end
       end
 
       # — Runtime control —
       def set_status(service_full_name, status)
+        unless ServingStatus.constants(false).map { |c| ServingStatus.const_get(c) }.include?(status)
+          raise ArgumentError, "Invalid ServingStatus: #{status.inspect}"
+        end
+
         @status_mutex.synchronize { @statuses[service_full_name] = status }
         @watch_mutex.synchronize { @watch_cv.broadcast }
       end
 
       def ignore_service(service_full_name)
-        @ignore_services[service_full_name]
+        @status_mutex.synchronize { @ignore_services.add(service_full_name) }
+      end
+
+      def unignore_service(service_full_name)
+        @status_mutex.synchronize { @ignore_services.delete(service_full_name) }
+      end
+
+      def refresh_services!(default_status: ServingStatus::SERVING)
+        seed_all_services!(default_status)
+      end
+
+      def set_overall_status(status)
+        set_status("", status)
       end
 
       private
@@ -52,10 +71,8 @@ module Grpc
           .select { |k| k < GRPC::GenericService && k.respond_to?(:service_name) }
           .map(&:service_name)
           .uniq
-
-        services = services.reject { |s| @ignore_services.include?(s) }
-
         @status_mutex.synchronize do
+          services.reject! { |s| @ignore_services.include?(s) }
           services.each { |name| @statuses[name] ||= default_status }
         end
       end
