@@ -2,9 +2,6 @@ require "grpc"
 require "google/protobuf"
 require "grpc/health/v1/health_services_pb"
 require "grpc/health/v1/health_pb"
-require "basic/v1/basic_services_pb"
-require "grpc_reflection/reflection/v1/reflection_services_pb"
-require "grpc_reflection/reflection/v1alpha/reflection_v1alpha_services_pb"
 
 module Grpc
   module Health
@@ -13,14 +10,12 @@ module Grpc
 
       def initialize(default_status: ServingStatus::SERVING)
         @statuses = {}
+        @ignore_services = []
         @status_mutex = Mutex.new
         @watch_mutex = Mutex.new
         @watch_cv = ConditionVariable.new
 
-        seed_from_descriptor!(Basic::V1::BasicService::Service.service_name, default_status)
-        seed_from_descriptor!(Grpc::Health::V1::Health::Service.service_name, default_status)
-        seed_from_descriptor!(Reflection::V1::ServerReflection::Service.service_name, default_status)
-        seed_from_descriptor!(Reflection::V1alpha::ServerReflection::Service.service_name, default_status)
+        seed_all_services!(default_status)
       end
 
       def check(req, _call)
@@ -46,17 +41,23 @@ module Grpc
         @watch_mutex.synchronize { @watch_cv.broadcast }
       end
 
+      def ignore_service(service_full_name)
+        @ignore_services[service_full_name]
+      end
+
       private
 
-      def seed_from_descriptor!(full_service_name, default_status)
-        desc = Google::Protobuf::DescriptorPool.generated_pool.lookup(full_service_name)
-        unless desc&.is_a?(Google::Protobuf::ServiceDescriptor)
-          raise ArgumentError, "Service descriptor not found for #{full_service_name}. " \
-                               "Ensure you required *_services_pb.rb."
-        end
+      def seed_all_services!(default_status)
+        services = ObjectSpace.each_object(Class)
+          .select { |k| k < GRPC::GenericService && k.respond_to?(:service_name) }
+          .map(&:service_name)
+          .uniq
 
-        # Use the name you already have instead of desc.full_name (which doesn't exist in Ruby)
-        @status_mutex.synchronize { @statuses[full_service_name] ||= default_status }
+        services = services.reject { |s| @ignore_services.include?(s) }
+
+        @status_mutex.synchronize do
+          services.each { |name| @statuses[name] ||= default_status }
+        end
       end
 
       def current_status(service_full_name)
