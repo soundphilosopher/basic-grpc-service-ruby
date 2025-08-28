@@ -2,7 +2,6 @@
 
 > A blazingly fast, TLS-secured gRPC service written in Ruby with CloudEvents support and reflection API! 💎
 
-[![Gem Version](https://badge.fury.io/rb/basic-grpc-service.svg)](https://badge.fury.io/rb/basic-grpc-service)
 [![Ruby](https://img.shields.io/badge/ruby-2.7+-red.svg)](https://www.ruby-lang.org/)
 [![License](https://img.shields.io/badge/license-UNLICENSE-green.svg)](./LICENSE)
 [![gRPC](https://img.shields.io/badge/gRPC-1.74.1-blue.svg)](https://grpc.io/)
