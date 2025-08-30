@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package basic.v1;
 
-option go_package = "github.com/soundphilosopher/basic-grpc-service-go/sdk/basic/v1;basicV1";
+option ruby_package = "Basic::V1::Proto";
 
 import "basic/service/v1/service.proto";
 

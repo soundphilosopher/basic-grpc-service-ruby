@@ -6,9 +6,9 @@ require "io/cloudevents/v1/cloudevents_pb"
 
 require_relative "utils"
 
-class BasicServiceV1 < Basic::V1::BasicService::Service
+class BasicServiceV1 < Basic::V1::Proto::BasicService::Service
   def hello(req, _call)
-    payload = Basic::Service::V1::HelloResponseEvent.new(
+    payload = Basic::Service::V1::Proto::HelloResponseEvent.new(
           greeting: "Hello, #{req.message}!"
         )
 
@@ -17,7 +17,7 @@ class BasicServiceV1 < Basic::V1::BasicService::Service
       value: payload.to_proto.to_s
     )
 
-    resp = Basic::Service::V1::HelloResponse.new(cloud_event: nil)
+    resp = Basic::Service::V1::Proto::HelloResponse.new(cloud_event: nil)
 
     resp.cloud_event = Io::CloudEvents::V1::Proto::CloudEvent.new(
       id: SecureRandom.uuid,
@@ -36,7 +36,7 @@ class BasicServiceV1 < Basic::V1::BasicService::Service
     Enumerator.new do |y|
       requests.each do |req|
         text, goodbye = bot.reply(req.message)
-        y << Basic::Service::V1::TalkResponse.new(answer: text)
+        y << Basic::Service::V1::Proto::TalkResponse.new(answer: text)
         break if goodbye
       end
     end
@@ -69,7 +69,7 @@ class BasicServiceV1 < Basic::V1::BasicService::Service
     Enumerator.new do |y|
       # initial progress tick (empty results yet)
       y << utils.build_background_response(
-        state: Basic::Service::V1::State::STATE_PROCESS,
+        state: Basic::Service::V1::Proto::State::STATE_PROCESS,
         started_at: started_at,
         completed_at: nil,
         responses: []
@@ -80,11 +80,11 @@ class BasicServiceV1 < Basic::V1::BasicService::Service
         item = q.pop # blocks until any worker finishes
         if item.is_a?(Exception)
           # optional: surface errors as a synthetic response entry
-          responses << Basic::Service::V1::SomeServiceResponse.new(
+          responses << Basic::Service::V1::Proto::SomeServiceResponse.new(
             id: SecureRandom.uuid,
             name: "background-error",
             version: "v1",
-            data: Basic::Service::V1::SomeServiceData.new(
+            data: Basic::Service::V1::Proto::SomeServiceData.new(
               value: item.message,
               type: "error"
             )
@@ -96,7 +96,7 @@ class BasicServiceV1 < Basic::V1::BasicService::Service
 
         # stream an updated snapshot after every completion
         y << utils.build_background_response(
-          state: Basic::Service::V1::State::STATE_PROCESS,
+          state: Basic::Service::V1::Proto::State::STATE_PROCESS,
           started_at: started_at,
           completed_at: nil,
           responses: responses.dup # dup so the message keeps this snapshot
@@ -110,7 +110,7 @@ class BasicServiceV1 < Basic::V1::BasicService::Service
         nil
       end
       y << utils.build_background_response(
-        state: Basic::Service::V1::State::STATE_COMPLETE,
+        state: Basic::Service::V1::Proto::State::STATE_COMPLETE,
         started_at: started_at,
         completed_at: Time.now,
         responses: responses

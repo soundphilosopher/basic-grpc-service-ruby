@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package basic.service.v1;
 
-option go_package = "github.com/soundphilosopher/basic-grpc-service-go/sdk/basic/service/v1;basicServiceV1";
+option ruby_package = "Basic::Service::V1::Proto";
 
 import "io/cloudevents/v1/cloudevents.proto";
 import "google/protobuf/timestamp.proto";
