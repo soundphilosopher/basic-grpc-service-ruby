@@ -3,7 +3,7 @@
 > A blazingly fast, TLS-secured gRPC service written in Ruby with CloudEvents support and reflection API! 💎
 
 [![Ruby](https://img.shields.io/badge/ruby-2.7+-red.svg)](https://www.ruby-lang.org/)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![gRPC](https://img.shields.io/badge/gRPC-1.74.1-blue.svg)](https://grpc.io/)
 [![Buf](https://img.shields.io/badge/Buf-Protocol%20Buffers-orange.svg)](https://buf.build/)
 [![TLS](https://img.shields.io/badge/TLS-Secured-brightgreen.svg)](https://github.com/FiloSottile/mkcert)
@@ -175,7 +175,7 @@ Built-in health checking endpoint following gRPC health checking protocol:
 
 ## 📄 License
 
-This project is unlicensed and released into the public domain. See the `UNLICENSE` file for details.
+This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
@@ -186,6 +186,6 @@ This project is unlicensed and released into the public domain. See the `UNLICEN
 
 ---
 
-**Made with ❤️ by Carsten Vuellings**
+**Made with ❤️ and a healthy dose of :gem: :diamonds:**
 
 *Happy gRPC-ing! 🎉
